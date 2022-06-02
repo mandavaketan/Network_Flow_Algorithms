@@ -1,8 +1,4 @@
 /* Dijkstra's Algorithm for Shortest Path
- * 
- * 
- * 
- * 
  */
 
 import java.util.*;
@@ -16,8 +12,8 @@ public class Graph {
 
     // CHANGE "filename" TO SELECT THE TEST GRAPH
     public static String filename = "testGraph1"; // "testGraph2";
-    public static String SRC = "/Users/ketanmandava/Documents/independent-study-ketanm-code/dijkstra/src/" + filename
-            + ".txt";
+    public static String SRC = "/Users/ketanmandava/Documents/independent-study-ketanm-code/dijkstra-and-bellman-ford/src/"
+            + filename + ".txt";
 
     /******** DIJKSTRA'S ALGORITHM ********/
     /*
@@ -49,8 +45,8 @@ public class Graph {
                 }
             }
 
-            // 5) iterate through all arcs to find nodes neighboring our selected node from
-            // 3 and test shortest distance
+            // 5) iterate through all arcs to find nodes neighboring our selected node and
+            // test shortest distance
             for (Arc arc : arcs) {
                 if (arc.n1.equals(cur) && unmarked.contains(arc.n2)) {
                     Node n2 = arc.n2;
@@ -81,8 +77,13 @@ public class Graph {
      * Returns: integer, the shortest distance from source node to terminal node
      */
     public int bellmanFord() {
+        // 1) set distance for start node to 0, distance to itself is 0
         this.start.dist = 0;
-        this.start.parent = new Node(Integer.MAX_VALUE, false, false);
+        this.start.parent = new Node(Integer.MAX_VALUE, false, false); // NOT NECESSARY, but helpful for testing so
+                                                                       // nullpointer wasn't hit on accident
+
+        // 2) Relax each index in our node set by updating shortest distance to each
+        // node |nodes| - 1 times
         for (int i = 1; i < nodes.size() - 1; i++) {
             for (Arc arc : arcs) {
                 Node n1 = arc.n1;
@@ -91,10 +92,13 @@ public class Graph {
                 if ((n2.dist > n1.dist + c) && n1.dist != Integer.MAX_VALUE) {
                     n2.dist = n1.dist + c;
                     n2.parent = n1;
-                    // System.out.println("DEBUG iter " + i + ": " + n2.name + ": " + n2.dist);
                 }
             }
         }
+
+        // 3) Repeat to detect any negative cycles, return 0 if detected (step 2 should
+        // be optimal, so if there is another shorter path, there must be a negative
+        // cycle)
         for (Arc arc : arcs) {
             Node n1 = arc.n1;
             Node n2 = arc.n2;
@@ -103,6 +107,7 @@ public class Graph {
                 return 0;
             }
         }
+        // 4) pull shortest distance from the terminal node
         for (Node node : nodes) {
             if (node.terminal) {
                 return node.dist;
@@ -183,14 +188,13 @@ public class Graph {
                 term = node;
             }
         }
+
         backpath.add(term);
-        // System.out.println(term.name);
         while (!term.start) {
             term = term.parent;
-            // System.out.print(term.name + " ");
             backpath.add(term);
         }
-        // System.out.println();
+
         int[] path = new int[backpath.size()];
         Iterator<Node> iter = backpath.iterator();
         int i = 0;
