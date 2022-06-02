@@ -16,7 +16,8 @@ public class Graph {
 
     // CHANGE "filename" TO SELECT THE TEST GRAPH
     public static String filename = "testGraph1"; // "testGraph2";
-    public static String SRC = "/Users/ketanmandava/Documents/independent-study-ketanm-code/dijkstra/src/" + filename + ".txt";
+    public static String SRC = "/Users/ketanmandava/Documents/independent-study-ketanm-code/dijkstra/src/" + filename
+            + ".txt";
 
     /******** DIJKSTRA'S ALGORITHM ********/
     /*
