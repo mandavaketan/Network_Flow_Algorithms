@@ -16,7 +16,7 @@ public class Graph {
 
     // CHANGE "filename" TO SELECT THE TEST GRAPH
     public static String filename = "testGraph1"; // "testGraph2";
-    public static String SRC = "/Users/ketanmandava/Documents/independent-study-ketanm-code/dijkstra1/src/" + filename + ".txt";
+    public static String SRC = "/Users/ketanmandava/Documents/independent-study-ketanm-code/dijkstra/src/" + filename + ".txt";
 
     /******** DIJKSTRA'S ALGORITHM ********/
     /*
@@ -67,6 +67,41 @@ public class Graph {
         }
 
         // 7) pull shortest distance from the terminal node
+        for (Node node : nodes) {
+            if (node.terminal) {
+                return node.dist;
+            }
+        }
+        return 0;
+    }
+
+    /******** BELLMAN-FORD ALGORITHM ********/
+    /*
+     * Returns: integer, the shortest distance from source node to terminal node
+     */
+    public int bellmanFord() {
+        this.start.dist = 0;
+        this.start.parent = new Node(Integer.MAX_VALUE, false, false);
+        for (int i = 1; i < nodes.size() - 1; i++) {
+            for (Arc arc : arcs) {
+                Node n1 = arc.n1;
+                Node n2 = arc.n2;
+                int c = arc.cost;
+                if ((n2.dist > n1.dist + c) && n1.dist != Integer.MAX_VALUE) {
+                    n2.dist = n1.dist + c;
+                    n2.parent = n1;
+                    // System.out.println("DEBUG iter " + i + ": " + n2.name + ": " + n2.dist);
+                }
+            }
+        }
+        for (Arc arc : arcs) {
+            Node n1 = arc.n1;
+            Node n2 = arc.n2;
+            int c = arc.cost;
+            if ((n2.dist > n1.dist + c) && n1.dist != Integer.MAX_VALUE) {
+                return 0;
+            }
+        }
         for (Node node : nodes) {
             if (node.terminal) {
                 return node.dist;
@@ -168,38 +203,11 @@ public class Graph {
     public static void main(String[] args) throws Exception {
         Graph g = new Graph();
         g.initGraph();
-        System.out.println("shortest distance: " + g.dijkstra());
-        System.out.println("Path: " + Arrays.toString(g.getShortestPath()));
+        System.out.println("Shortest distance with Dijkstra: " + g.dijkstra());
+        System.out.println("Path with Dijkstra: " + Arrays.toString(g.getShortestPath()));
+
+        g.initGraph();
+        System.out.println("Shortest distance with Bellman-Ford: " + g.bellmanFord());
+        System.out.println("Path with Bellman-Ford: " + Arrays.toString(g.getShortestPath()));
     }
 }
-
-// public int bellmanFord() { // BELLMAN-FORD ALGORITHM
-// this.start.dist = 0;
-// this.start.parent = new Node(Integer.MAX_VALUE, false, false);
-// for (int i = 1; i < nodes.size() - 1; i++) {
-// for (Arc arc : arcs) {
-// Node n1 = arc.n1;
-// Node n2 = arc.n2;
-// int c = arc.cost;
-// if ((n2.dist > n1.dist + c) && n1.dist != Integer.MAX_VALUE) {
-// n2.dist = n1.dist + c;
-// n2.parent = n1;
-// // System.out.println("DEBUG iter " + i + ": " + n2.name + ": " + n2.dist);
-// }
-// }
-// }
-// for (Arc arc : arcs) {
-// Node n1 = arc.n1;
-// Node n2 = arc.n2;
-// int c = arc.cost;
-// if ((n2.dist > n1.dist + c) && n1.dist != Integer.MAX_VALUE) {
-// return 0;
-// }
-// }
-// for (Node node : nodes) {
-// if (node.terminal) {
-// return node.dist;
-// }
-// }
-// return 0;
-// }
