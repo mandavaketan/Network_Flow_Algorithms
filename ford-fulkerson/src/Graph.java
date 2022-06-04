@@ -73,7 +73,7 @@ public class Graph {
         }
     }
 
-    /******** INITIALIZING ORIGINAL GRAPH ********/
+    /******** INITIALIZING RESIDUAL GRAPH ********/
     /*
      * Returns: null
      */
@@ -100,7 +100,8 @@ public class Graph {
     // }
 
     /******** helper func - findPathFromSourceToSink ********/
-    /* Function: searches the residual graph to see if there is a 
+    /*
+     * Function: searches the residual graph to see if there is a
      * path from source to sink with positive risidual capacity.
      * 
      * Returns: True or false if there is a path that exists
@@ -168,8 +169,9 @@ public class Graph {
             for (Arc rarc : r.arcs) {
                 if (arc.n1.equals(rarc.n1) && arc.n2.equals(rarc.n2)) {
                     arc.x = arc.u - rarc.u;
-                    if (arc.n2.equals(terminal))
+                    if (arc.n2.equals(terminal)) {
                         sum += arc.x;
+                    }
                 }
             }
         }
