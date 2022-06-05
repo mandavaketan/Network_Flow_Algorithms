@@ -6,13 +6,73 @@ import java.io.*;
 
 public class Graph {
     public Node start = null;
+    public Node terminal = null;
     public Set<Node> nodes = new HashSet<>();
     public Set<Arc> arcs = new HashSet<>();
-    public int[] shortestPath;
 
     // CHANGE "filename" TO SELECT THE TEST GRAPH
     public static String filename = "testGraph1"; // "testGraph2";
     public static String SRC = "src/" + filename + ".txt";
+
+    /******** INITIALIZING GRAPH ********/
+    /*
+     * Returns: null
+     */
+    public void initGraph() throws FileNotFoundException {
+        File file = new File(SRC);
+        Scanner sc = new Scanner(file);
+        int iter = 0;
+        Set<Integer> nodesNames = new HashSet<Integer>();
+        while (sc.hasNextLine()) {
+            String line = sc.nextLine();
+            String[] split = line.split(" ");
+
+            if (iter == 0) {
+                int first = Integer.parseInt(split[0]);
+                nodesNames.add(first);
+                Node start = new Node(first);
+                nodes.add(start);
+                this.start = start;
+                int second = Integer.parseInt(split[1]);
+                nodesNames.add(second);
+                Node terminal = new Node(second);
+                nodes.add(terminal);
+                this.terminal = terminal;
+                iter++;
+            } else {
+                char arcName = split[0].charAt(0);
+                int first = Integer.parseInt(split[1]);
+                int second = Integer.parseInt(split[2]);
+                int cost = Integer.parseInt(split[3]);
+                Node n1 = null;
+                Node n2 = null;
+                if (!nodesNames.contains(first)) {
+                    n1 = new Node(first);
+                    nodesNames.add(first);
+                    nodes.add(n1);
+                } else {
+                    for (Node cur : nodes) {
+                        if (cur.name == first) {
+                            n1 = cur;
+                        }
+                    }
+                }
+                if (!nodesNames.contains(second)) {
+                    n2 = new Node(second);
+                    nodesNames.add(second);
+                    nodes.add(n2);
+                } else {
+                    for (Node cur : nodes) {
+                        if (cur.name == second) {
+                            n2 = cur;
+                        }
+                    }
+                }
+                Arc arc = new Arc(arcName, n1, n2, cost);
+                arcs.add(arc);
+            }
+        }
+    }
 
     /******** DIJKSTRA'S ALGORITHM ********/
     /*
@@ -23,12 +83,11 @@ public class Graph {
         Set<Node> unmarked = new HashSet<>();
         for (Node node : nodes) {
             unmarked.add(node);
+            node.dist = Integer.MAX_VALUE;
         }
 
         // 2) set distance for start node to 0, distance to itself is 0
         start.dist = 0;
-        start.parent = new Node(-1, false, false); // NOT NECESSARY, but helpful for testing so nullpointer wasn't hit
-                                                   // on accident
 
         // 3) while there are unmarked nodes, do the following...
         while (!unmarked.isEmpty()) {
@@ -48,23 +107,23 @@ public class Graph {
             // test shortest distance
             for (Arc arc : arcs) {
                 if (arc.n1.equals(cur) && unmarked.contains(arc.n2)) {
-                    Node n2 = arc.n2;
-                    int c = arc.cost;
-                    if ((n2.dist > cur.dist + c) && cur.dist != Integer.MAX_VALUE) {
-                        n2.dist = cur.dist + c;
-                        n2.parent = cur;
+                    System.out.println("testing " + arc.n2.name);
+                    if ((arc.n2.dist > cur.dist + arc.cost) && cur.dist != Integer.MAX_VALUE) {
+                        arc.n2.dist = cur.dist + arc.cost;
+                        arc.n2.parent = cur;
                     }
                 }
             }
 
             // 6) mark cur
             unmarked.remove(cur);
+            System.out.println("marked " + cur.name);
             cur.marked = true;
         }
 
         // 7) pull shortest distance from the terminal node
         for (Node node : nodes) {
-            if (node.terminal) {
+            if (node.equals(terminal)) {
                 return node.dist;
             }
         }
@@ -77,20 +136,16 @@ public class Graph {
      */
     public int bellmanFord() {
         // 1) set distance for start node to 0, distance to itself is 0
-        this.start.dist = 0;
-        this.start.parent = new Node(Integer.MAX_VALUE, false, false); // NOT NECESSARY, but helpful for testing so
-                                                                       // nullpointer wasn't hit on accident
+        start.dist = 0;
+        
 
         // 2) Relax each index in our node set by updating shortest distance to each
         // node |nodes| - 1 times
-        for (int i = 1; i < nodes.size() - 1; i++) {
+        for (int i = 1; i < nodes.size(); i++) {
             for (Arc arc : arcs) {
-                Node n1 = arc.n1;
-                Node n2 = arc.n2;
-                int c = arc.cost;
-                if ((n2.dist > n1.dist + c) && n1.dist != Integer.MAX_VALUE) {
-                    n2.dist = n1.dist + c;
-                    n2.parent = n1;
+                if ((arc.n2.dist > arc.n1.dist + arc.cost) && (arc.n1.dist != Integer.MAX_VALUE)) {
+                    arc.n2.dist = arc.n1.dist + arc.cost;
+                    arc.n2.parent = arc.n1;
                 }
             }
         }
@@ -99,80 +154,20 @@ public class Graph {
         // be optimal, so if there is another shorter path, there must be a negative
         // cycle)
         for (Arc arc : arcs) {
-            Node n1 = arc.n1;
-            Node n2 = arc.n2;
-            int c = arc.cost;
-            if ((n2.dist > n1.dist + c) && n1.dist != Integer.MAX_VALUE) {
+            if ((arc.n2.dist > arc.n1.dist + arc.cost) && (arc.n1.dist != Integer.MAX_VALUE)) {
                 return 0;
             }
         }
         // 4) pull shortest distance from the terminal node
         for (Node node : nodes) {
-            if (node.terminal) {
+            if (node.name == terminal.name) {
                 return node.dist;
             }
         }
         return 0;
     }
 
-    /******** INITIALIZING GRAPH ********/
-    /*
-     * Returns: null
-     */
-    public void initGraph() throws FileNotFoundException {
-        File file = new File(SRC);
-        Scanner sc = new Scanner(file);
-        int iter = 0;
-        Set<Integer> nodesNames = new HashSet<Integer>();
-        while (sc.hasNextLine()) {
-            String line = sc.nextLine();
-            String[] split = line.split(" ");
-
-            if (iter == 0) {
-                int first = Integer.parseInt(split[0]);
-                nodesNames.add(first);
-                Node start = new Node(first, true, false);
-                nodes.add(start);
-                this.start = start;
-                int second = Integer.parseInt(split[1]);
-                nodesNames.add(second);
-                Node terminal = new Node(second, false, true);
-                nodes.add(terminal);
-                iter++;
-            } else {
-                char arcName = split[0].charAt(0);
-                int first = Integer.parseInt(split[1]);
-                int second = Integer.parseInt(split[2]);
-                int cost = Integer.parseInt(split[3]);
-                Node n1 = null;
-                Node n2 = null;
-                if (!nodesNames.contains(first)) {
-                    n1 = new Node(first, false, false);
-                    nodesNames.add(first);
-                    nodes.add(n1);
-                } else {
-                    for (Node cur : nodes) {
-                        if (cur.name == first) {
-                            n1 = cur;
-                        }
-                    }
-                }
-                if (!nodesNames.contains(second)) {
-                    n2 = new Node(second, false, false);
-                    nodesNames.add(second);
-                    nodes.add(n2);
-                } else {
-                    for (Node cur : nodes) {
-                        if (cur.name == second) {
-                            n2 = cur;
-                        }
-                    }
-                }
-                Arc arc = new Arc(arcName, n1, n2, cost);
-                arcs.add(arc);
-            }
-        }
-    }
+    
 
     /******** GETTING SHORTEST PATH ********/
     /*
@@ -183,13 +178,12 @@ public class Graph {
         List<Node> backpath = new ArrayList<Node>();
         Node term = null;
         for (Node node : nodes) {
-            if (node.terminal) {
+            if (node.equals(this.terminal)) {
                 term = node;
             }
         }
-
         backpath.add(term);
-        while (!term.start) {
+        while (!term.equals(start)) {
             term = term.parent;
             backpath.add(term);
         }
@@ -208,10 +202,10 @@ public class Graph {
         Graph g = new Graph();
         g.initGraph();
         System.out.println("Shortest distance with Dijkstra: " + g.dijkstra());
-        System.out.println("Path with Dijkstra: " + Arrays.toString(g.getShortestPath()));
-
-        g.initGraph();
-        System.out.println("Shortest distance with Bellman-Ford: " + g.bellmanFord());
-        System.out.println("Path with Bellman-Ford: " + Arrays.toString(g.getShortestPath()));
+        System.out.println("Shortest Path with Dijkstra: " + Arrays.toString(g.getShortestPath()));
+        Graph g2 = new Graph();
+        g2.initGraph();
+        System.out.println("Shortest distance with Bellman-Ford: " + g2.bellmanFord());
+        System.out.println("Shortest Path with Bellman-Ford: " + Arrays.toString(g2.getShortestPath()));
     }
 }

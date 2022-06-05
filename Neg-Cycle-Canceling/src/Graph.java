@@ -7,7 +7,7 @@ public class Graph {
     public int[] shortestPath;
 
     // CHANGE "filename" TO SELECT THE TEST GRAPH
-    public static String filename = "testGraph2"; // "testGraph2";
+    public static String filename = "testGraph1"; // "testGraph2";
     public static String SRC = "src/" + filename + ".txt";
 
     /******** INITIALIZING ORIGINAL GRAPH ********/
@@ -139,26 +139,29 @@ public class Graph {
         }
         return false;
     }
-
+    /******** helper function: FORD-FULKERSON ********/
+    /*
+     * Returns: void
+     */
     public void modifiedFordFulkerson(Node s, Node t) {
         while (this.findPathFromSourceToSink(s, t)) {
-            // System.out.println(terminal.minResCap);
             for (Node cur = t; !cur.equals(s); cur = cur.parent) {
-                // System.out.print(cur.name + ", ");
                 for (Arc rarc : this.arcs) {
-                    if (rarc.n1.equals(cur) && rarc.n2.equals(cur.parent)) { // add residual capacity to reverse arc
+                    if (rarc.n1.equals(cur) && rarc.n2.equals(cur.parent)) { // add min residual capacity to reverse arc
                         rarc.u += t.minResCap;
-                        System.out.println(rarc.name + ": " + rarc.u);
                     } else if (rarc.n2.equals(cur) && rarc.n1.equals(cur.parent)) { // subtract residual capacity from
                                                                                     // forward arc
                         rarc.u -= t.minResCap;
-                        System.out.println(rarc.name + ": " + rarc.u);
                     }
                 }
             }
         }
     }
 
+    /******** Generate feasible flow ********/
+    /*
+     * Returns: Boolean if a feasible flow has been detected
+     */
     public boolean generateFeasibleFlow() {
         Graph rFordFulkerson = new Graph();
         rFordFulkerson.initResidualGraph(this);
@@ -213,130 +216,57 @@ public class Graph {
         return true;
     }
 
-    // --> DIJKSTRA DOESNT WORK BECAUSE ASSUMES ALL PREVIOUSLY TOUCHED NODES ARE
-    // CLOSED
-    public boolean modifiedDijkstraNegCycleDetect(Node s, Node t) {
-        // 1) create unmarked set and fill with all nodes (all initially unmarked)
-        Set<Node> unmarked = new HashSet<>();
-        for (Node node : nodes) {
-            unmarked.add(node);
-        }
-
-        // // 2) set distance for start node to 0, distance to itself is 0
-        s.dist = 0;
-
-        boolean negCycleFound = false;
-        Node inNegCycle = null;
-
-        // 3) while there are unmarked nodes, do the following...
-        while (!unmarked.isEmpty() && !negCycleFound) {
-
-            // 4) find unmarked node with smallest predicted distance (initially will be
-            // our
-            // starting node)
-            Node cur = null;
-            int min = Integer.MAX_VALUE;
-            System.out.println("unmarked: ");
-            for (Node node : unmarked) {
-                System.out.print(node.name + ", ");
-                if (node.dist < min) {
-                    min = node.dist;
-                    // System.out.println(node.name + ": " + min);
-                    cur = node;
-                }
-            }
-
-            // 5) iterate through all arcs to find nodes neighboring our selected node
-            // and
-            // test shortest distance
-            for (Arc arc : arcs) {
-                if (arc.n1.equals(cur) && unmarked.contains(arc.n2)) {
-                    if ((arc.n2.dist > cur.dist + arc.c) && (cur.dist != Integer.MAX_VALUE)) {
-                        arc.n2.dist = cur.dist + arc.c;
-                        arc.n2.parent = cur;
-                        // System.out.println(n2.dist);
-                    } // && (arc.u > 0)
-                }
-                // if (arc.n2.equals(cur) && unmarked.contains(arc.n1)) {
-                //     if ((cur.dist > arc.n1.dist + arc.c) && (arc.n1.dist != Integer.MAX_VALUE)) {
-                //         cur.dist = arc.n1.dist + arc.c;
-                //         cur.parent = arc.n1;
-                //         // System.out.println(n2.dist);
-                //     } // && (arc.u > 0)
-                // }
-                if ((arc.n2.dist < 0) || (arc.n1.dist < 0)) { // detect negative cycle
-                    negCycleFound = true;
-                    inNegCycle = arc.n2;
-                }
-            }
-
-            // 6) mark cur
-            unmarked.remove(cur);
-            System.out.println("marked " + cur.name);
-            cur.marked = true;
-        }
-        if (!negCycleFound) {
-            return false;
-        } else {
-            System.out.print("Negative cycle detected on nodes: ");
-            Node cur = null;
-            while (cur != inNegCycle) {
-                cur = inNegCycle.parent;
-                System.out.print(cur.name + ", ");
-                cur.inNegCycle = true;
-            }
-            System.out.println();
-            return true;
-        }
-    }
-
-
-
+    /******** helper function: Modified Bellman-Ford Algorithm ********/
+    /*
+     * Returns: Boolean if a a negative cycle has been detected
+     */
     public boolean modifiedBellmanFordNegCycleDetect() {
+        // 1) establish parent and distance variables with initial conditions
         for (Node node : nodes) {
             node.parent = null;
             node.inNegCycle = false;
             node.dist = Integer.MAX_VALUE;
+            // set distance for source nodes to 0, distance to itself is 0
             if (node.supply > 0) {
                 node.dist = 0;
             }
         }
-        // s.dist = 0;
 
-        System.out.println();
+        // 2) Relax each index in our node set by updating shortest distance to each
+        // node |nodes| - 1 times
         for (int i = 0; i < nodes.size(); i++) {
             for (Arc arc : arcs) {
                 if ((arc.n2.dist > arc.n1.dist + arc.c) && (arc.n1.dist != Integer.MAX_VALUE)) {
                     arc.n2.dist = arc.n1.dist + arc.c;
                     arc.n2.parent = arc.n1;
-                    // System.out.println(arc.n1.name + " is parent of " + arc.n2.name);
                 }
             }
         }
         List<Node> cycle = new ArrayList<>();
         Node foundCycle = null;
-
+        // 3) Repeat to detect any negative cycles with arcs with positive residual
+        // capacity, return 0 if detected (step 2 should
+        // be optimal, so if there is another shorter path, there must be a negative
+        // cycle)
         for (Arc arc : arcs) {
             if ((arc.n2.dist > arc.n1.dist + arc.c) && (arc.n1.dist != Integer.MAX_VALUE) && (arc.u > 0)) {
                 foundCycle = arc.n2;
                 break;
             }
         }
+        // 4) if no negative cycle detected, return false
         if (foundCycle == null) {
             return false;
         }
 
-
+        //not necessary, used for testing
         Node startNode = foundCycle;
-        // System.out.println(startNode.name);
         Node prevNode = null;
-        System.out.println("adding nodes: ");
-        while(true) {
+        while (true) {
             prevNode = startNode.parent;
             if (cycle.contains(prevNode)) {
                 break;
             }
-            System.out.print(prevNode.name + ", ");
             cycle.add(prevNode);
             prevNode.inNegCycle = true;
             startNode = prevNode;
@@ -347,44 +277,40 @@ public class Graph {
             cycle.remove(j);
         }
 
-        System.out.println();
-        for (Node node : cycle) {
-            System.out.println(node.name);
-        }
-
         return true;
     }
 
-
-
+    /******** NEGATIVE CYCLE CANCELING ALGORITHM ********/
+    /*
+     * Returns: Boolean, true if a a negative cycle has been detected and the updates have been performed
+     *                   false if no negative cycle has been detected, optimal solution has been found
+     */
     public boolean negativeCycleCanceling() {
+        // 1) generate residual graph
         Graph rNCC = new Graph();
         rNCC.initResidualGraph(this);
 
+        // 2) detect negative cycles (function is above)
         if (rNCC.modifiedBellmanFordNegCycleDetect()) {
-            // if (rNCC.modifiedBellmanFordNegCycleDetect()) {
             Set<Arc> negCycle = new HashSet<>();
             int uc = Integer.MAX_VALUE;
 
-            for (Arc rarc : rNCC.arcs) { // check if arc is in negative cycle
+            // 3) search arcs for arcs in negative cycle based on parent vals and store minimum residual capacity
+            for (Arc rarc : rNCC.arcs) {
                 if (rarc.n1.inNegCycle && rarc.n2.inNegCycle && rarc.n2.parent.equals(rarc.n1)) {
                     negCycle.add(rarc);
-                    // System.out.println(rarc.name);
                     if (rarc.u < uc) {
                         uc = rarc.u;
-                    } 
-                    // if (rarc.u <= 0) {
-                    //     return true;
-                    // }
+                    }
+
                 }
             }
-
-            System.out.println("uc " + uc);
+            //if the residual capacity is negative, do nothing and iterate again (test for all positive residual capacity)
             if (uc < 0) {
                 return true;
             }
 
-            for (Arc negCycleArc : negCycle) { // update residual capacity along arcs in neg cycle
+            for (Arc negCycleArc : negCycle) { // update residual capacity with minimum residual capacity along arcs in neg cycle
                 for (Arc rarc : rNCC.arcs) {
                     if (negCycleArc.n1.equals(rarc.n1) && negCycleArc.n2.equals(rarc.n2)) {
                         rarc.u -= uc;
@@ -402,9 +328,8 @@ public class Graph {
             }
             return true;
         }
+        //return false to exit if no negative cycle has been detected
         return false;
-
-
 
     }
 
@@ -421,7 +346,7 @@ public class Graph {
             System.out.println(arc.name + ": " + arc.x);
         }
         int iter = 0;
-        while(g.negativeCycleCanceling()){ 
+        while (g.negativeCycleCanceling()) {
             iter++;
             System.out.println(iter);
             System.out.println("updated flow: ");
@@ -433,7 +358,7 @@ public class Graph {
         int sum = 0;
         for (Arc arc : g.arcs) {
             System.out.println(arc.name + "| flow: " + arc.x + ", cost: " + (arc.c * arc.x));
-            sum+=(arc.c * arc.x);
+            sum += (arc.c * arc.x);
         }
         System.out.println("Final Minimum cost: " + sum);
     }
